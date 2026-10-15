@@ -195,25 +195,52 @@ export default class ScriptEditorWebPart extends BaseClientSideWebPart<IScriptEd
     }
 
 
-    private evalScript(elem): void {
-        const data = (elem.text || elem.textContent || elem.innerHTML || "");
-        
-        // Check if this is an external script
-        if (elem.src && elem.src.length > 0) {
-            // External scripts are handled in executeScript method
-            return;
+    // SharePoint Online CSP allows 'unsafe-eval' but not 'unsafe-inline', so inline code
+    // must be compiled with the Function constructor instead of injected <script> tags.
+    private runCode(code: string, thisArg: any, source: string, event?: Event): void {
+        if (!code || code.trim().length === 0) return;
+        try {
+            const func = new Function("event", code);
+            func.call(thisArg, event);
+        } catch (error) {
+            if (console.error) {
+                if (error instanceof EvalError) {
+                    console.error(`Script Editor: ${source} blocked by Content Security Policy ('unsafe-eval' not allowed). Move the code to an external .js file and add its host to Trusted script sources in the SharePoint admin center.`, error);
+                } else {
+                    console.error(`Script Editor: failed to execute ${source}:`, error);
+                }
+            }
         }
+    }
 
-        // For inline scripts, use Function constructor which works with CSP 'unsafe-eval'
-        if (data && data.trim().length > 0) {
-            try {
-                // Use Function constructor instead of eval for better scoping
-                // This works because SharePoint CSP includes 'unsafe-eval'
-                const scriptFunc = new Function(data);
-                scriptFunc.call(window);
-            } catch (error) {
-                if (console.error) {
-                    console.error('Failed to execute inline script:', error);
+    private evalScript(elem): void {
+        // External scripts are handled in executeScript method
+        if (elem.src && elem.src.length > 0) return;
+
+        const data = (elem.text || elem.textContent || elem.innerHTML || "");
+        this.runCode(data, window, "inline script");
+    }
+
+    // Inline event handler attributes (onclick="..." etc.) and javascript: URLs are blocked by CSP
+    // ('unsafe-inline'), so convert them to listeners compiled with the Function constructor.
+    private rebindInlineHandlers(element: HTMLElement): void {
+        const nodes = element.querySelectorAll("*");
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i] as HTMLElement;
+            const attributes = Array.prototype.slice.call(node.attributes) as Attr[];
+            for (const attr of attributes) {
+                const name = attr.name.toLowerCase();
+                if (name.indexOf("on") === 0 && name.length > 2) {
+                    const code = attr.value;
+                    node.removeAttribute(attr.name);
+                    node.addEventListener(name.substring(2), (ev: Event) => this.runCode(code, node, `${name} handler`, ev));
+                } else if ((name === "href" || name === "src" || name === "action") && /^\s*javascript:/i.test(attr.value)) {
+                    const code = attr.value.replace(/^\s*javascript:/i, "");
+                    node.setAttribute(attr.name, name === "href" ? "#" : "");
+                    node.addEventListener(name === "action" ? "submit" : "click", (ev: Event) => {
+                        ev.preventDefault();
+                        this.runCode(decodeURIComponent(code), node, "javascript: URL", ev);
+                    });
                 }
             }
         }
@@ -246,20 +273,23 @@ export default class ScriptEditorWebPart extends BaseClientSideWebPart<IScriptEd
 
         for (let i = 0; children_nodes[i]; i++) {
             const child: any = children_nodes[i];
-            if (!child.type || child.type.toLowerCase() === "text/javascript") {
+            const type = (child.type || "").toLowerCase();
+            if (!type || type === "text/javascript" || type === "application/javascript") {
                 scripts.push(child);
             }
         }
 
         const urls = [];
-        const onLoads = [];
+        const onLoads: string[] = [];
         for (let i = 0; scripts[i]; i++) {
             const scriptTag = scripts[i];
             if (scriptTag.src && scriptTag.src.length > 0) {
                 urls.push(scriptTag.src);
             }
-            if (scriptTag.onload && scriptTag.onload.length > 0) {
-                onLoads.push(scriptTag.onload);
+            // onload="..." is an inline handler that CSP blocks, so read the attribute text instead
+            const onLoad = scriptTag.getAttribute("onload");
+            if (onLoad && onLoad.trim().length > 0) {
+                onLoads.push(onLoad);
             }
         }
 
@@ -278,7 +308,7 @@ export default class ScriptEditorWebPart extends BaseClientSideWebPart<IScriptEd
                 await SPComponentLoader.loadScript(scriptUrl, { globalExportsName: "ScriptGlobal" });
             } catch (error) {
                 if (console.error) {
-                    console.error(error);
+                    console.error(`Script Editor: failed to load ${urls[i]}. If the console shows a Content Security Policy violation, add this script's host to Trusted script sources in the SharePoint admin center.`, error);
                 }
             }
         }
@@ -291,9 +321,10 @@ export default class ScriptEditorWebPart extends BaseClientSideWebPart<IScriptEd
             if (scriptTag.parentNode) { scriptTag.parentNode.removeChild(scriptTag); }
             this.evalScript(scripts[i]);
         }
+        this.rebindInlineHandlers(element);
         // execute any onload people have added
         for (let i = 0; onLoads[i]; i++) {
-            onLoads[i]();
+            this.runCode(onLoads[i], window, "script onload handler");
         }
     }
 }
