@@ -196,12 +196,20 @@ export default class ScriptEditorWebPart extends BaseClientSideWebPart<IScriptEd
 
 
     // SharePoint Online CSP allows 'unsafe-eval' but not 'unsafe-inline', so inline code
-    // must be compiled with the Function constructor instead of injected <script> tags.
+    // must be evaluated instead of injected as <script> tags.
+    // Inline <script> blocks (no thisArg) use indirect eval so top-level var/function declarations
+    // become globals like a real <script> tag; event handlers use the Function constructor so they
+    // get the element as `this` and `event` as a parameter. Both rely on CSP 'unsafe-eval'.
     private runCode(code: string, thisArg: any, source: string, event?: Event): void {
         if (!code || code.trim().length === 0) return;
         try {
-            const func = new Function("event", code);
-            func.call(thisArg, event);
+            if (thisArg === window && !event) {
+                const globalEval = window["eval"];
+                globalEval(code);
+            } else {
+                const func = new Function("event", code);
+                func.call(thisArg, event);
+            }
         } catch (error) {
             if (console.error) {
                 if (error instanceof EvalError) {
