@@ -1,6 +1,6 @@
 {
     "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
-    "id": "3a328f0a-99c4-4b28-95ab-fe0847f657a3",
+    "id": "fd08edd3-cf76-46d1-9966-0989ae38f8ec",
     "alias": "ScriptEditorWebPart",
     "componentType": "WebPart",
     "version": "*",
@@ -11,7 +11,7 @@
     "supportsThemeVariants": true,
     "hiddenFromToolbox": false,
     "preconfiguredEntries": [{
-        "groupId": "3a328f0a-99c4-4b28-95ab-fe0847f657a3",
+        "groupId": "fd08edd3-cf76-46d1-9966-0989ae38f8ec",
         "group": {
             "default": "PnP"
         },
