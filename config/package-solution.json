@@ -3,7 +3,7 @@
     "solution": {
         "name": "Modern Script Editor web part by mikaelsvenson",
         "id": "cc639346-d7b2-44b6-9b82-b57aab485504",
-        "version": "2.0.0.0",
+        "version": "1.0.27.0",
         "includeClientSideAssets": true,
         "skipFeatureDeployment": false,
         "isDomainIsolated": false,
