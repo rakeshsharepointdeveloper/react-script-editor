@@ -5,7 +5,7 @@
         "id": "cc639346-d7b2-44b6-9b82-b57aab485504",
         "version": "1.0.27.0",
         "includeClientSideAssets": true,
-        "skipFeatureDeployment": false,
+        "skipFeatureDeployment": true,
         "isDomainIsolated": false,
         "developer": {
             "name": "PnP Team",
