@@ -3,7 +3,7 @@
     "solution": {
         "name": "Modern Script Editor web part by mikaelsvenson",
         "id": "cc639346-d7b2-44b6-9b82-b57aab485504",
-        "version": "1.0.27.0",
+        "version": "1.0.28.0",
         "includeClientSideAssets": true,
         "skipFeatureDeployment": true,
         "isDomainIsolated": false,
@@ -30,7 +30,7 @@
                 "title": "PnP Modern Script Editor Web Part Feature",
                 "description": "The feature that activates ScriptEditorWebPart from the pnp-script-editor solution.",
                 "id": "f0b570e4-1188-4fff-bf08-b444426c7da1",
-                "version": "1.0.27.0",
+                "version": "1.0.28.0",
                 "componentIds": [
                     "fd08edd3-cf76-46d1-9966-0989ae38f8ec"
                 ]
