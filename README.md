@@ -208,6 +208,7 @@ Version|Date|Comments
 1.0.26.0|October 1, 2024|Upgrade to SPFx 1.20.0
 1.0.27.0|November 19, 2025|Upgrade to SPFx 1.20.1, added support for loading scripts via Function constructor to comply with CSP policies.
 1.0.28.0|November 13, 2026|New solution and web part IDs, tenant-wide deployment, inline scripts run in global scope, CSP-safe inline event handlers, javascript: URLs and script onload.
+1.0.29.0|November 17, 2026|Set requiresCustomScript to false so the web part shows in the toolbox on sites with custom script blocked.
 
 ## Minimal Path to Awesome
 
